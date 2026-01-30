@@ -4,6 +4,7 @@ import PremiumButton from "./PremiumBtn";
 import uploadIcon from "../assets/Frame.png"
 import axios from "axios";
 import { useNavigate } from "react-router-dom"; 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export default function PdfRiskAnalyzer() {
   const [file, setFile] = useState(null);
@@ -34,7 +35,7 @@ useEffect(() => {
     // 2. Prioritize Database User (Token)
     if (token) {
       try {
-        const { data } = await axios.get("http://localhost:5000/api/auth/me", {
+        const { data } = await axios.get(`${API_URL}/api/auth/me`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setUser(data);
@@ -83,7 +84,7 @@ const handleUpload = async () => {
     const formData = new FormData();
     formData.append("pdf", file);
 
-    const { data } = await axios.post("http://localhost:5000/api/pdf/upload", formData);
+    const { data } = await axios.post(`${API_URL}/api/pdf/upload`, formData);
     
     // Pass chunks to analysis
     await handleAnalyze(data.chunks); 
@@ -116,7 +117,7 @@ const handleUpload = async () => {
 
   const handleAnalyze = async (chunksData) => {
     try {
-      const { data } = await axios.post("http://localhost:5000/api/pdf/analyze", { chunks: chunksData });
+      const { data } = await axios.post(`${API_URL}/api/pdf/analyze`, { chunks: chunksData });
       // Check if Gemini rejected it as a non-legal document
     if (data.analyzedChunks[0]?.is_legal === false) {
        setError(data.analyzedChunks[0].error);
