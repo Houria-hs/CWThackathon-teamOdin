@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import PremiumButton from "./PremiumBtn";
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 
 export default function Login() {
   const navigate = useNavigate();
