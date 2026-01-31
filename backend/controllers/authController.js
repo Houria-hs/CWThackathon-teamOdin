@@ -47,25 +47,34 @@ exports.login = async (req, res) => {
       [email]
     );
     if (userCheck.rows.length === 0)
-      return res.status(400).json({ error: 'User not found' });
+      return res.status(400).json({ message: 'User not found' });
 
     const validPassword = await bcrypt.compare(
       password,
       userCheck.rows[0].password
     );
     if (!validPassword)
-      return res.status(400).json({ error: 'Invalid password' });
+      return res.status(400).json({ message: 'Invalid password' });
 
     const token = jwt.sign(
       { id: userCheck.rows[0].id, email: userCheck.rows[0].email },
       process.env.JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: '24h' }
     );
 
-    res.json({ token, user: userCheck.rows[0] });
+    res.json({ 
+      token, 
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        hasOnboarded: user.has_onboarded
+      } 
+    });
+    // res.json({ token, user: userCheck.rows[0] });
   } catch (err) {
     console.error('Login backend error:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -73,7 +82,7 @@ exports.login = async (req, res) => {
 exports.getProfile = async (req, res) => {
     try {
         const user = await pool.query(
-            'SELECT username FROM users WHERE id = $1',
+            'SELECT id, username, email, has_onboarded FROM users WHERE id = $1',
             [req.userId]
         );
 
@@ -85,5 +94,17 @@ exports.getProfile = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: "Server error" });
+    }
+};
+
+exports.completeOnboarding = async (req, res) => {
+    try {
+        await pool.query(
+            'UPDATE users SET has_onboarded = TRUE WHERE id = $1',
+            [req.userId]
+        );
+        res.json({ message: "Onboarding status updated" });
+    } catch (err) {
+        res.status(500).json({ message: "Update failed" });
     }
 };
