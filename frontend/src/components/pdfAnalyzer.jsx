@@ -4,6 +4,8 @@ import PremiumButton from "./PremiumBtn";
 import uploadIcon from "../assets/Frame.png"
 import axios from "axios";
 import { useNavigate } from "react-router-dom"; 
+import { pdf } from '@react-pdf/renderer';
+import { ResultExport } from "./ResultExport";
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export default function PdfRiskAnalyzer() {
@@ -17,6 +19,30 @@ export default function PdfRiskAnalyzer() {
   const [showGreeting, setShowGreeting] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const [progress, setProgress] = useState(0);
+
+useEffect(() => {
+  if (step === "scanning") {
+    // 1. Start moving the bar
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev < 60) return prev + 2;     // Fast at first
+        if (prev < 90) return prev + 0.5;   // Slow down for "deep analysis"
+        if (prev < 98) return prev + 0.1;   // "Finalizing..."
+        return prev;
+      });
+    }, 100);
+
+    return () => clearInterval(interval);
+  }
+}, [step]);
+
+// When chunks arrive from your API, set progress to 100 immediately
+useEffect(() => {
+  if (chunks && chunks.length > 0) {
+    setProgress(100);
+  }
+}, [chunks]);
 
 const resetAnalyzer = () => {
   setFile(null);
@@ -28,36 +54,32 @@ const resetAnalyzer = () => {
 
 useEffect(() => {
   const initUser = async () => {
-    // 1. Get whatever we have in storage
     const token = localStorage.getItem("token");
     const savedName = localStorage.getItem("userName");
 
-    // 2. Prioritize Database User (Token)
     if (token) {
       try {
         const { data } = await axios.get(`${API_URL}/api/auth/me`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setUser(data);
+
+        setUser({
+          ...data,
+          username: savedName || data.username 
+        });
+
         triggerToast();
         return; 
       } catch (err) {
-        console.error("Token invalid, falling back to guest name");
+        console.error("Token invalid");
         localStorage.removeItem("token");
       }
     }
 
-    // 3. Fallback to Guest Name (Onboarding)
     if (savedName) {
       setUser({ username: savedName });
       triggerToast();
     }
-  };
-
-  const triggerToast = () => {
-    setShowGreeting(true);
-    const timer = setTimeout(() => setShowGreeting(false), 5000);
-    return () => clearTimeout(timer);
   };
 
   initUser();
@@ -93,7 +115,7 @@ const handleUpload = async () => {
     const errorMsg = err.response?.data?.error || "Analysis failed. Please try again.";
     setStep("upload");
     setError(errorMsg);
-    setError("Analysis failed. Please try again.");
+    setError("Analysis failed. Please enter a valid document.");
     setUploadProgress(0); 
   } finally {
     setLoading(false);
@@ -144,38 +166,16 @@ useEffect(() => {
   }
 }, [error]);
 
-const handleDownload = () => {
+const handleDownload = async () => {
   const riskyChunks = chunks.filter(c => c.risk && c.risk !== "Low");
-  
-  if (riskyChunks.length === 0) {
-    alert("No risky clauses found to download.");
-    return;
-  }
+  if (riskyChunks.length === 0) return alert("No risky clauses found.");
 
-  // Formatting the Review Document
-  let content = `LEGAL RISK REVIEW REPORT\n`;
-  content += `Document: ${file ? file.name : "Unknown"}\n`;
-  content += `Date: ${new Date().toLocaleDateString()}\n`;
-  content += `-------------------------------------------\n\n`;
-
-  riskyChunks.forEach((c, index) => {
-    content += `${index + 1}. RISK LEVEL: ${c.risk.toUpperCase()}\n`;
-    content += `CLAUSE: "${c.text}"\n`;
-    content += `ANALYSIS: ${c.explanation || "No specific reason provided."}\n`;
-    content += `-------------------------------------------\n\n`;
-  });
-
-  content += `\nDisclaimer: This report is AI-generated and should not replace a lawyer's opinion.`;
-
-  // Create a blob and download it
-  const blob = new Blob([content], { type: "text/plain" });
+  const blob = await pdf(<ResultExport chunks={riskyChunks} fileName={file?.name} />).toBlob();
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${file?.name.replace(/\.[^/.]+$/, "")}_Legal_Review.txt`;
-  document.body.appendChild(link);
+  link.download = `${file?.name.split('.')[0]}_Analysis.pdf`;
   link.click();
-  document.body.removeChild(link);
 };
 
 
@@ -211,12 +211,12 @@ const handleLogout = () => {
               Welcome!
             </p>
             <h2 className="text-[15px] lg:text-[17px] font-bold text-[#000000] capitalize leading-tight tracking-tight">
-              {user?.username || "Guest"} 👋
+              {user?.username || "Guest"} 👋  
             </h2>
           </div>
         
           {/* right side: menu button */}
-          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="bg-[#0000000A] lg:hidden p-2.5 rounded-full active:scale-90 transition-transform">
+          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="bg-[#0000000A]  p-2.5 rounded-full active:scale-90 transition-transform">
             <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                {isMenuOpen ? (
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
@@ -236,13 +236,13 @@ const handleLogout = () => {
             />
 
             {/* Floating Menu Card */}
-            <div className="absolute right-6 top-24 w-56 bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-50 z-[55] lg:hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200 origin-top-right">
+            <div className="absolute right-6 top-24 w-56 bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-50 z-[55]  animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200 origin-top-right">
               <div className="p-2 flex flex-col">
                 
                 {/* Navigation Links */}
                 <button onClick={() => { navigate("/Onboarding"); setIsMenuOpen(false); }} className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 rounded-2xl transition-colors text-gray-700 active:bg-blue-50">
                   <span className="text-lg">👋</span>
-                  <span className="text-[14px] font-bold font-['Sora']">Go back to</span>
+                  <span className="text-[14px] font-bold font-['Sora']">Go back</span>
                 </button>
 
                 {/* Divider */}
@@ -266,7 +266,7 @@ const handleLogout = () => {
           {step === "upload" && (
             <div className="animate-in fade-in duration-500">
 
-              <div className="h-10 mb-2">
+              <div className="h-10 mb-4">
                   {error && (
                     <div className="animate-toast bg-red-50 text-red-600 text-[12px] lg:text-[18px] p-2 rounded-lg text-center font-medium border border-red-100">
                       ⚠️ {error}
@@ -274,7 +274,7 @@ const handleLogout = () => {
                   )}
                </div>
 
-              <h1 className="text-[18px] lg:text-[24px] font-normal text-start text-[#000000] leading-[26px] mb-3">
+              <h1 className="text-[18px]lg:text-[24px] font-normal text-start text-[#000000] leading-[26px] mb-3">
                 Clear Clause your Legal AI Companion
               </h1>
               <p className="text-[#696969] text-start text-[14px] lg:text-[16px] leading-relaxed">
@@ -285,8 +285,8 @@ const handleLogout = () => {
               <div className="mt-8 bg-[#c5e3ff] rounded-3xl p-5 border border-blue-50">
                 <p className="text-[#0073FF] font-['Sora'] text-[12px] line-height[21px] text-start mb-4 lg:text-[16px] ">Upload a document</p>
                 
-                <label className="cursor-pointer block bg-white p-[7px] rounded-[10px]">
-                  <div className="bg-white/50 lg:p-16 border-[1px] border-dashed border-[#E9E9E9] rounded-[10px] p-[10px] flex flex-col items-center justify-center">
+                <label className="cursor-pointer  block bg-white p-[7px] rounded-[10px]">
+                  <div className="bg-white/50 py-12 px-6 lg:p-16 min-h-[200px] lg:min-h-0  border-[1px] border-dashed border-[#E9E9E9] rounded-[10px] p-[10px] flex flex-col items-center justify-center">
                     <div className="flex text-center flex-col items-center justify-center ">
                       <img src={uploadIcon} alt="icon" />
                       {/* <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg> */}
@@ -301,52 +301,118 @@ const handleLogout = () => {
                     onChange={handleFileChange} 
                     className="hidden" />
                 </label>
-
                 {file && (
-                  <div className="mt-4 bg-white rounded-xl p-3 flex items-center gap-3 shadow-sm relative">
-                    <div className={`p-3 rounded-xl text-white text-white text-[10px] font-bold ${
-                      file.type.includes('pdf') ? 'bg-red-500' : 
-                      file.type.includes('image') ? 'bg-purple-500' : 'bg-blue-500'
-                    }`}>
-                      {file.name.split('.').pop().toUpperCase()}
-                    </div>
-                    {/* <div className="bg-blue-500 p-2 rounded-lg text-white text-[10px] font-bold">.DOC</div> */}
-                    <div className="flex-1">
-                      <div className="flex justify-between items-center mb-1">
-                        <p className="text-[10px] font-bold text-gray-700 truncate w-32">{file.name}</p>
-                        <p className="text-[10px] text-gray-400">{uploadProgress}%</p>
-                      </div>
-                      <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
-                        <div className="bg-[#00ABFF] h-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
-                      </div>
-                      <p className="text-[8px] text-start text-[#00000085] font-['Sora'] mt-1">10.6KB of 5.0MB</p>
-                    </div>
-                    <button onClick={() => setFile(null)} className="text-gray-400 font-['Sora']">✕</button>
-                  </div>
+  <div className="mt-6 bg-white rounded-2xl p-4 lg:p-5 flex items-center gap-4 shadow-md relative animate-in fade-in slide-in-from-top-2">
+    {/* 1. LARGER FILE ICON */}
+    <div className={`shrink-0 h-12 w-12 flex items-center justify-center rounded-xl text-white text-[11px] font-bold shadow-sm ${
+      file.type.includes('pdf') ? 'bg-red-500' : 
+      file.type.includes('image') ? 'bg-purple-500' : 'bg-blue-500'
+    }`}>
+      {file.name.split('.').pop().toUpperCase()}
+    </div>
+
+    {/* 2. FLEXIBLE CONTENT AREA */}
+    <div className="flex-1 min-w-0"> {/* min-w-0 prevents text from breaking flexbox */}
+      <div className="flex justify-between items-center mb-2">
+        <p className="text-[12px] lg:text-[14px] font-bold text-gray-800 truncate pr-2">
+          {file.name}
+        </p>
+        <p className="text-[11px] font-semibold text-[#0073FF]">
+          {uploadProgress}%
+        </p>
+      </div>
+
+      {/* 3. THICKER PROGRESS BAR */}
+      <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden shadow-inner">
+        <div 
+          className="bg-[#00ABFF] h-full transition-all duration-500 ease-out" 
+          style={{ width: `${uploadProgress}%` }}
+        ></div>
+      </div>
+
+      <p className="text-[10px] text-start text-gray-400 font-['Sora'] mt-2">
+        {(file.size / 1024).toFixed(1)} KB of 5.0 MB
+      </p>
+    </div>
+
+    {/* 4. SPACED REMOVE BUTTON */}
+    <button 
+      onClick={() => setFile(null)} 
+      className="ml-2 p-1 text-gray-400 hover:text-red-500 transition-colors"
+      aria-label="Remove file"
+    >
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
                 )}
               </div>
             </div>
           )}
-          {/* SCANNING STATE */}
+         {/* SCANNING STATE */}
           {step === "scanning" && (
-            <div className="flex-1 flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-500 px-10 text-center">
-              <img src={loadingicon} alt="" 
-              className="mb-3 lg:mb-2 lg:p-20 bject-contain transition-all duration-700 animate-pulse" 
-                />
-
-              <p className="text-[16px] font-['Sora'] lg:text-[18px] font-normal text-gray-800 leading-[21px] ">
-                This may take a few minutes while we analyze your document...
-              </p>
+            <div className="flex-1 flex flex-col items-center justify-center px-10 text-center animate-in fade-in duration-700">
     
-              <div className="mt-8">
-                <div className="w-6 h-6 border-2 border-blue-100 border-t-blue-500 rounded-full animate-spin"></div>
+              <div className="relative mb-8 lg:mb-12 group">
+                {/* Pulse effect */}
+                <div className="absolute inset-0 rounded-full bg-blue-400/10 animate-ping duration-[3000ms]"></div>
+          
+                {/* The Loading Icon */}
+                <div className="relative z-10 p-10 lg:p-16 bg-white rounded-full shadow-2xl overflow-hidden border border-gray-50">
+                  <img 
+                    src={loadingicon} 
+                    alt="Scanning..." 
+                    className="w-20 h-20 lg:w-32 lg:h-32 object-contain" 
+                  />
+
+                  <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-transparent via-[#0073FF] to-transparent shadow-[0_0_20px_#0073FF] animate-[scan_2s_ease-in-out_infinite]"></div>
+                </div>
               </div>
+
+              <div className="space-y-4">
+                <h3 className="text-[20px] font-bold text-black font-['Sora']">
+                  {progress < 100 ? "AI Analysis in Progress..." : "Analysis Complete!"}
+                </h3>
+                <p className="text-[14px]  lg:text-[16px] text-gray-500 font-['Sora'] h-5">
+                  {progress < 40 && "Reading document structure..."}
+                  {progress >= 40 && progress < 80 && "Scanning for risky clauses..."}
+                  {progress >= 80 && progress < 100 && "Generating risk report..."}
+                  {progress === 100 && "Success!"}
+                </p>
+              </div>
+
+               {/* CONTROLLED PROGRESS BAR */}
+              <div className="mt-10 w-full max-w-[280px] h-2 bg-gray-100 rounded-full overflow-hidden relative border border-gray-50 shadow-inner">
+                <div 
+                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#00ABFF] to-[#0073FF] rounded-full transition-all duration-500 ease-out" 
+                  style={{ width: `${progress}%` }}
+                >
+                  {/* Reflection shimmer on the bar itself */}
+                  <div className="absolute inset-0 bg-white/20 animate-[shimmer_1.5s_infinite]"></div>
+                </div>
+              </div>
+
+              <p className="mt-4 text-[12px] font-bold text-[#0073FF] font-['Sora']">
+                {Math.round(progress)}%
+              </p>
+
+              <style dangerouslySetInnerHTML={{ __html: `
+                @keyframes scan {
+                  0%, 100% { transform: translateY(0); opacity: 0; }
+                  50% { transform: translateY(180px); opacity: 1; }
+                }
+                @keyframes shimmer {
+                  0% { transform: translateX(-100%); }
+                  100% { transform: translateX(100%); }
+                }
+              `}} />
             </div>
           )}
           {/* RESULT SCREEN */}
           {step === "result" && (
-            <div className="animate-in slide-in-from-bottom-6 duration-700 pb-10 h-full flex flex-col">
-              <div className="flex items-center gap-3 p-4 mb-6 rounded-2xl border border-gray-100 bg-white shadow-sm mt-4">
+            <div className="animate-in slide-in-from-bottom-6 duration-700  pb-10 h-full flex flex-col">
+              <div className="flex items-center gap-2 p-4 mb-6 rounded-2xl border border-gray-100 bg-white shadow-sm mt-4">
                 <div className={`p-2 rounded-lg ${compromised ? "bg-red-50 text-red-500" : "bg-green-50 text-green-500"}`}>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                 </div>
@@ -358,7 +424,7 @@ const handleLogout = () => {
               </div>
 
              {/*  DATA RESULTS */}
-            <div className="bg-white rounded-[40px] p-8 shadow-sm border border-gray-50 mb-6 overflow-hidden min-h-[400px]">
+            <div className="bg-white rounded-[40px] lg:p-10 p-8 shadow-sm border border-gray-50 mb-6 overflow-hidden min-h-[400px]">
               <h3 className="text-[14px] font-bold text-gray-800 text-center mb-8">
                   {file ? file.name.replace(/\.[^/.]+$/, "") : "Document Analysis"}
               </h3>
@@ -387,23 +453,23 @@ const handleLogout = () => {
             </div>
                         
               {/* Color Code */}
-              <div className="flex justify-between px-2 mb-6">
-                <div className="flex items-center gap-2 m-2">
-                  <div className="w-4 h-4 bg-green-500 rounded-md"></div>
-                  <span className="text-[11px] font-['Sora'] font-bold text-green-600">Secure</span>
+              <div className="flex flex-wrap justify-between items-center  gap-y-4 px-2 mb-6">
+                <div className="flex  items-center gap-2 m-2">
+                  <div className="w-4 h-4 bg-green-500 rounded-[2px]"></div>
+                  <span className="text-[12px] font-['Sora'] font-bold text-green-600">Secure</span>
                 </div>
                 <div className="flex items-center gap-2 ">
-                  <div className="w-4 h-4 bg-orange-500 rounded-md"></div>
-                  <span className="text-[11px] font-['Sora'] font-bold text-orange-600">Reviewed</span>
+                  <div className="w-4 h-4 bg-orange-500 rounded-[2px]"></div>
+                  <span className="text-[12px] font-['Sora'] font-bold text-orange-600">Reviewed</span>
                 </div>
                 <div className="flex items-center gap-2 m-2">
-                  <div className="w-4 h-4 bg-red-500 rounded-md"></div>
-                  <span className="text-[11px] font-['Sora'] font-bold text-red-600">Compromised</span>
+                  <div className="w-4 h-4 bg-red-500 rounded-[2px]"></div>
+                  <span className="text-[12px] font-['Sora'] font-bold text-red-600">Compromised</span>
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-2xl p-4 mb-8">
-                <p className="text-gray-500 text-[11px] text-center font-medium font-['Sora']">
+              <div className="bg-[#E0E0E052] rounded-[10px] p-4 mb-8">
+                <p className="text-[#383838] text-[14px] text-center font-normal font-['Sora'] leading-[21px]">
                   This color code identify your document quality
                 </p>
               </div>
