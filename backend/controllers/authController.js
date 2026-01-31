@@ -55,7 +55,7 @@ exports.login = async (req, res) => {
     );
     if (!validPassword)
       return res.status(400).json({ message: 'Invalid password' });
-
+      const user = userCheck.rows[0];
     const token = jwt.sign(
       { id: userCheck.rows[0].id, email: userCheck.rows[0].email },
       process.env.JWT_SECRET,
