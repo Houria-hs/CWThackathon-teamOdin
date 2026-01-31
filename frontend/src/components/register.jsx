@@ -100,7 +100,7 @@ export default function Register() {
               <label className="text-[16px] font-['Sora']  font-medium text-[#4D4D4D]">Password</label>
               <div className="relative w-full">
               <input
-                type={showPassword ? "text" : "password"}
+                type="password"
                 name="password"
                 placeholder="Create a password"
                 value={formData.password}
@@ -108,7 +108,7 @@ export default function Register() {
                 required
                 className="w-full h-14 px-6 rounded-xl bg-[#F9F9F9] text-[#4D4D4D] placeholder-[#9D9A9A] focus:outline-none focus:ring-2 focus:ring-[#0057B8]"
               />
-              {/* The Eye Button */}
+              {/* The Eye Button
                 <button
                   type="button" // Important: set to button so it doesn't submit the form
                   onClick={() => setShowPassword(!showPassword)}
@@ -126,7 +126,7 @@ export default function Register() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                   )}
-                </button>
+                </button> */}
               </div>
             </div>
 
@@ -146,7 +146,7 @@ export default function Register() {
                 to="/TermsAndServices" 
                 className="text-[#D4AF37] font-semibold cursor-pointer hover:underline"
                >
-                    Terms and Services
+                    Terms Of Service
                </Link>
                 
               </p>
