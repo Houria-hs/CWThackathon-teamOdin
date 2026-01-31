@@ -84,7 +84,7 @@ export default function Login() {
             </div>
 
             {/* PASSWORD */}
-            <div className="flex flex-col items-start gap-[12px]">
+            <div className="flex flex-col items-start gap-[12px] ">
               <label className="text-[16px] font-medium text-[#4D4D4D] font-['Sora']">Password</label>
               <input
                 type="password"
@@ -93,25 +93,12 @@ export default function Login() {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                className="w-full h-14 px-6 rounded-xl bg-[#F9F9F9] text-[#4D4D4D] placeholder-[#9D9A9A] focus:outline-none focus:ring-2 focus:ring-[#0057B8]"
+                className="w-full h-14 px-6 mb-5  rounded-xl bg-[#F9F9F9] text-[#4D4D4D] placeholder-[#9D9A9A] focus:outline-none focus:ring-2 focus:ring-[#0057B8]"
               />
             </div>
 
-            {/* Checkbox */}
-            <div className="flex items-start gap-2">
-              <input
-                type="checkbox"
-                name="remember"
-                checked={formData.remember}
-                onChange={handleChange}
-                className="mt-1"
-              />
-              <p className="text-sm text-[#4D4D4D] font-['Sora'] mb-10">
-                Remember me
-              </p>
-            </div>
 
-
+            
              <PremiumButton 
                 type="submit"
                 text={loading ? "Logging in..." : "Log in"}
