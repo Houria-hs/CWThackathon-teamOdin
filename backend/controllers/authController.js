@@ -99,9 +99,10 @@ exports.getProfile = async (req, res) => {
 
 exports.completeOnboarding = async (req, res) => {
     try {
+        const { username } = req.body;
         await pool.query(
-            'UPDATE users SET has_onboarded = TRUE WHERE id = $1',
-            [req.userId]
+            'UPDATE users SET has_onboarded = TRUE, username = $1 WHERE id = $2',
+            [username, req.userId]
         );
         res.json({ message: "Onboarding status updated" });
     } catch (err) {
