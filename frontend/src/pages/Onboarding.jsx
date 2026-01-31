@@ -10,45 +10,44 @@ export default function OnboardingName({ setUser }) {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false); // Controls the popup
 
-  const handleProceed = () => {
-    if (name.trim()) {
-      // 1. Saving to state so the Greeting Toast can use it
-      setUser({ username: name.trim() });
-      // When user clicks "Proceed", show the Privacy Modal
-      setShowModal(true);
-      
-      // 2. Persist it in localStorage 
-      localStorage.setItem("userName", name.trim());
-      
-    }
-  };
-
+const handleProceed = () => {
+  if (name.trim()) {
+    // Spread prev state so we don't lose the user's email/id
+    setUser(prev => ({ ...prev, username: name.trim() }));
+    setShowModal(true);
+    localStorage.setItem("userName", name.trim());
+  }
+};
 
 const handleFinalAgreement = async () => {
+  const cleanName = name.trim();
   try {
     const token = localStorage.getItem("token");
 
-    // Only try to update the database if the user is actually logged in
     if (token) {
-      await axios.put(`${API_URL}/api/auth/complete-onboarding`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // 1. Update the Database
+      await axios.put(`${API_URL}/api/auth/complete-onboarding`, 
+        { username: cleanName }, 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
     }
 
-    // Persist name and update state 
-    setUser({ username: name.trim() });
-    localStorage.setItem("userName", name.trim());
+    // 2. Update LocalStorage
+    localStorage.setItem("userName", cleanName);
     
-    // Move to the next page
+    // 3. Update State (using functional update to preserve existing user data)
+    setUser(prev => ({ ...prev, username: cleanName }));
+    
     navigate("/analyze");
   } catch (err) {
-    console.error("Failed to save onboarding status to database:", err);
-    // Fallback: move them anyway so the app doesn't feel broken
+    console.error("Failed to save onboarding status:", err);
+    // Even if DB fails, update local state so UI looks correct
+    setUser(prev => ({ ...prev, username: cleanName }));
     navigate("/analyze");
   }
 };
   return (
-    <div className="min-h-screen  sm:bg-[#F1F5F9] sm:p-6 bg-white flex justify-center font-sans overflow-hidden pt-10 ">
+    <div className="min-h-screen  sm:bg-[#F1F5F9] sm:p-6 bg-white flex justify-center font-sans overflow-hidden pt-8 ">
       <div className="w-full max-w-md lg:max-w-2xl sm:min-h-[850px] sm:rounded-[3rem] sm:shadow-2xl bg-white flex flex-col relative px-6 lg:px-16 pt-10 lg:pt-20 lg:border lg:border-gray-100 overflow-hidden">
         
         {/* Header Section */}
@@ -93,47 +92,68 @@ const handleFinalAgreement = async () => {
             Privacy First • Secured with AI
         </div>
 
+{/* ACKNOWLEDGEMENT MODAL */}
+{showModal && (
+  <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-[4px] lg:backdrop-blur-[8px] animate-in fade-in duration-500">
+    
+    {/* THE MODAL CARD */}
+    <div className="bg-white lg:max-w-lg sm:rounded-[40px] lg:p-12 text-start pb-20 pt-10 w-full max-w-md rounded-t-[30px] sm:rounded-[30px] p-8 shadow-2xl relative custom-modal-slide">
+      
+      {/* Close Button */}
+      <button 
+        onClick={() => setShowModal(false)}
+        className="absolute top-6 left-8 text-black hover:text-gray-600 transition-opacity active:scale-90"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
 
-        {/* ACKNOWLEDGEMENT MODAL */}
-        {showModal && (
-          <div className=" fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-[2px] lg:backdrop-blur-[6px] animate-in fade-in duration-300">
-            <div className="bg-white lg:max-w-lg sm:rounded-[40px] lg:p-12 sm:zoom-in-95 text-start pb-20 pt-10 w-full max-w-md rounded-t-[20px] sm:rounded-[20px] p-8 shadow-2xl animate-in slide-in-from-bottom-10 duration-500 relative">
-              
-              {/* Close Button */}
-              <button 
-                onClick={() => setShowModal(false)}
-                className="absolute top-6 left-8 text-black hover:text-gray-600"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+      <div className="mt-10">
+        <h2 className="text-[18px] leading-[20px] lg:text-[22px] font-semibold text-black mb-2 font-['Sora'] ">Data Privacy:</h2>
+        <p className="text-[14px] lg:text-[15px] leading-[20px] text-[#000000] font-['Sora'] mb-6 font-normal">
+          In case you’re wondering whether Clear Clause stores your documents — no, we don’t. 
+          Files you upload are processed securely and are not saved, shared, or used for training purposes. <br />
+          Once analysis is complete, your document is discarded automatically. 
+          Your data stays yours. Always.
+        </p>
 
-              <div className="mt-10">
-                <h2 className="text-[18px] leading-[20px] lg:text-[22px]  font-semibold text-black mb-2 font-['Sora'] ">Data Privacy:</h2>
-                <p className="text-[14px] lg:text-[15px] leading-[20px] text-[#000000] font-['Sora'] mb-6 font-normal">
-                  In case you’re wondering whether Clear Clause stores your documents — no, we don’t. 
-                  Files you upload are processed securely and are not saved, shared, or used for training purposes. <br />
-                  Once analysis is complete, your document is discarded automatically. 
-                  Your data stays yours. Always.
-                </p>
+        <h2 className="text-[18px] leading-[20px] lg:text-[22px] font-semibold text-black font-['Sora'] mb-2">Updates to These Terms:</h2>
+        <p className="text-[14px]/[20px] text-[#000000] lg:text-[15px] font-['Sora'] mb-10 font-normal leading-[20px]">
+          We may update these terms to improve clarity, security, or functionality. 
+          Any changes will be reflected within the app before taking effect. 
+          Continued use of Clear Clause means you accept the updated terms. 
+          Transparency is part of the deal.
+        </p>
 
-                <h2 className="text-[18px] leading-[20px] lg:text-[22px] font-semibold text-black font-['Sora'] mb-2">Updates to These Terms:</h2>
-                <p className="text-[14px]/[20px] text-[#000000] lg:text-[15px] font-['Sora'] mb-10 font-normal leading-[20px]">
-                  We may update these terms to improve clarity, security, or functionality. 
-                  Any changes will be reflected within the app before taking effect. 
-                  Continued use of Clear Clause means you accept the updated terms. 
-                  Transparency is part of the deal.
-                </p>
+        <div className="hover:scale-[1.01] transition-transform">
+          <PremiumButton 
+            text="Agree & Continue" 
+            onClick={handleFinalAgreement} 
+          />
+        </div>
+      </div>
+    </div>
 
-                <PremiumButton 
-                  text="Agree & Continue" 
-                  onClick={handleFinalAgreement} 
-                />
-              </div>
-            </div>
-          </div>
-        )}
+    {/* CUSTOM ANIMATION ENGINE */}
+    <style dangerouslySetInnerHTML={{ __html: `
+      @keyframes modalSlideUp {
+        0% { 
+          transform: translateY(100%) scale(0.95); 
+          opacity: 0; 
+        }
+        100% { 
+          transform: translateY(0) scale(1); 
+          opacity: 1; 
+        }
+      }
+
+      .custom-modal-slide {
+        animation: modalSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+    `}} />
+  </div>
+)}
       </div>
     </div>
   );
