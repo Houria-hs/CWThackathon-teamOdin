@@ -1,66 +1,81 @@
-⚖️ ClearClause AI
-Your Intelligent Legal Companion. Analyze contracts, detect risks, and sign with confidence—all without your data ever being stored.
+⚖️ ClearClause 
+Making Legal Contracts Legible for Everyone.
 
-Live Demo »
+ClearClause is a premium AI-powered legal document analyzer designed to strip away "legalese" and expose hidden risks. We provide a privacy-first, instant audit of your contracts so you can sign with confidence.
 
-🚀 Overview
-ClearClause is a high-performance AI tool designed to simplify legal document review. By leveraging advanced language models, it scans PDFs and documents for ambiguous terms, unfair clauses, and hidden risks, providing a summarized safety report in seconds.
+🛑 The Problem
+Legal documents are intentionally complex. Most people sign contracts without fully understanding them because:
 
-The "ClearClause" Promise
-0% Data Retention: We do not store, save, or train on your documents. Once your session ends, the data is wiped.
+Hidden Risks: Unfair "Limitation of Liability" or "Termination" clauses are buried in fine print.
 
-Real-Time Analysis: Instant identification of "High Risk" and "Low Risk" clauses.
+Costly Advice: Consulting a lawyer for every minor document is expensive and slow.
 
-Sora UI Aesthetic: A clean, modern, and distraction-free interface designed for clarity.
+Privacy Concerns: Existing AI tools often store your sensitive documents to train their models.
 
-✨ Features
-Smart PDF Upload: Drag-and-drop interface with real-time upload progress tracking.
+✅ The Solution
+ClearClause solves this by providing a high-speed, AI-driven "risk radar" that:
 
-AI Scanning Animation: A sophisticated visual feedback loop while the AI analyzes your text.
+Categorizes Risk: Instantly flags clauses as "High Risk" (Red), "Medium Risk" (Orange), or "Secure" (Green).
 
-Risk Categorization: Visual flagging system (Red for High Risk, Green for Secure).
+Privacy-First Architecture: Operates on a non-retention basis. Your documents are processed in real-time and deleted the moment you close the session.
 
-Laptop Optimized: A responsive "split-view" experience for desktop users and a streamlined vertical stack for mobile.
+Accessibility: Translates complex legal jargon into plain English summaries.
 
-Secure Authentication: Firebase-powered secure login and registration.
+✨ Core Features
+Smart PDF Analysis: Drag-and-drop PDF, DOCS, or PNG files for instant scanning.
+
+AI Risk Radar: Visual breakdown of ambiguous terms and unfair clauses.
+
+Premium UI/UX: A minimalist, "Sora-inspired" interface optimized for both mobile and laptop.
+
+Secure Auth: Firebase-backed user accounts to manage your profile.
 
 🛠️ Tech Stack
-Frontend: React.js + Tailwind CSS
+Frontend: React.js, Tailwind CSS
 
-Animations: Tailwind Animate
+Backend & Auth: NodeJS, Express, Firebase
 
-Icons: Lucide React / Custom SVGs
+Deployment: Vercel for frontend, Render for backend
 
-Backend/Auth: NodeJS + Express
+🚀 How to Run & Test
+Follow these steps to get your local environment running:
 
-Database: Firebase
+1. Prerequisites
+Ensure you have Node.js (v16+) and npm installed.
 
-Deployment: Vercel for frontend and render for backend
+2. Installation
 
-📦 Installation & Setup
-To run ClearClause locally:
+# Clone the repository
+git clone https://github.com/Houria-hs/CWThackathon-teamOdin.git
 
-Clone the repository:
-
-Bash
-git clone https://github.com/Houria-hs/clearclause.git
+# Enter the directory
 cd clearclause
-Install dependencies:
 
-Bash
+# Install dependencies
 npm install
 
-Start the development server:
+3. Environment Setup
+Create a .env file in the root directory and add your supabase and AI API credentials:
+DATABASE_URL=your_db_Url
+GEMINI_API_KEY=you_API_Key
 
+4. Running Locally
 Bash
+# Start the development server
 npm run dev
+Navigate to http://localhost:5173 to view the app.
 
-🛡️ Privacy Policy
-ClearClause was built on the principle that legal documents are private. Our architecture ensures:
+5. Testing
+UI Testing: Check the "Laptop View" vs "Mobile View" by resizing your browser.
 
-Transient Processing: Files are read in memory and never written to a permanent database.
+Upload Test: Use a sample PDF to test the scanning animation and risk categorization.
 
-No Model Training: Your proprietary data is never used to train future iterations of our AI.
+Auth Test: Register a new account and verify the login flow.
 
+🌐 Live Deployment
+The project is live and can be accessed here:
 
-Project Link: https://clearclause-six.vercel.app/
+👉 https://clearclause-six.vercel.app/
+
+📄 Privacy Policy
+ClearClause does not store your documents. We use a transient data-processing pipeline that ensures your legal information stays yours.
