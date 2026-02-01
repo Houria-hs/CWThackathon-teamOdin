@@ -64,6 +64,7 @@ git clone https://github.com/Houria-hs/CWThackathon-teamOdin.git
 
 cd CWThackathon-teamOdin
 
+
 🛠️ Backend Setup
 
 Navigate to the backend folder:
@@ -87,6 +88,7 @@ JWT_SECRET=your_custom_jwt_secret
 Start the backend server:
 
 npm start
+
 
 💻 Frontend Setup
 
