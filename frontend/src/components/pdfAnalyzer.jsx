@@ -115,7 +115,7 @@ const handleUpload = async () => {
     const errorMsg = err.response?.data?.error || "Analysis failed. Please try again.";
     setStep("upload");
     setError(errorMsg);
-    setError("Analysis failed. Please enter a valid document.");
+    setError("Analysis failed. Please enter a valid document format.");
     setUploadProgress(0); 
   } finally {
     setLoading(false);
@@ -291,7 +291,7 @@ const handleLogout = () => {
                       <img src={uploadIcon} alt="icon" />
                       {/* <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg> */}
                     <p className="text-[12px] text-[#000000]font-bold-400 font-['Sora'] lg:text-[16px]">Drag and drop or <span className="text-[#0073FF] underline ">choose file</span> to upload.</p>
-                    <p className="text-[12px] text-[#000000] mt-1 font-['Sora'] lg:text-[16px]">Image formart: PDF, DOCS, PNG. Max 5.0MB</p>
+                    <p className="text-[12px] text-[#000000] mt-1 font-['Sora'] lg:text-[16px]">File format: PDF, Max 5.0MB</p>
                     </div>
                   </div>
                   <input type="file" accept="application/pdf, 
