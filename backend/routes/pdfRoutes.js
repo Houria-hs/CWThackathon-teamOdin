@@ -26,37 +26,48 @@ router.post("/upload", upload.single("pdf"), async (req, res) => {
 
   const filePath = path.resolve(req.file.path);
 
+  try {
+    // We wrap the extraction in a Promise to handle it cleanly
+    pdfExtract.extract(filePath, {}, (err, data) => {
+      
+      // 1. DELETE THE FILE IMMEDIATELY ONCE READ
+      // Placing it at the very top of the callback ensures it's gone 
+      // even if the rest of your text logic fails.
+      try {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      } catch (unlinkErr) {
+        console.error("Cleanup Error:", unlinkErr);
+      }
 
-  pdfExtract.extract(filePath, {}, (err, data) => {
-    fs.unlinkSync(filePath);
+      if (err) {
+        console.error("PDF Extraction Error:", err);
+        return res.status(500).json({ error: "Failed to extract PDF text" });
+      }
 
-    if (err) {
-      console.error("PDF Extraction Error:", err);
-      return res.status(500).json({ error: "Failed to extract PDF text" });
-    }
+      const fullText = data.pages
+        .map(page => page.content.map(item => item.str).join(" "))
+        .join("\n");
 
-    const fullText = data.pages
-      .map(page => page.content.map(item => item.str).join(" "))
-      .join("\n");
+      if (!fullText.trim() || fullText.trim().length < 50) {
+        return res.status(422).json({ 
+          error: "This file contains no readable text." 
+        });
+      }
+      
+      const chunks = chunkText(fullText);
+      if (chunks.length === 0) {
+        return res.status(400).json({ error: "The document is too short." });
+      }
 
-    if (!fullText.trim()) {
-      return res.status(400).json({
-        error: "No readable text found. Scanned PDFs not supported."
-      });
-    }
-    if (!fullText || fullText.trim().length < 50) {
-      return res.status(422).json({ 
-        error: "This file contains no readable text. Please ensure it is a clear document or image." 
-      });
-    }
-    
-    const chunks = chunkText(fullText);
-
-    if (chunks.length === 0) {
-      return res.status(400).json({ error: "The document is too short or unreadable." });
-    }
-    res.json({ chunks });
-  });
+      res.json({ chunks });
+    });
+  } catch (globalErr) {
+    // 2. FALLBACK DELETE
+    // If something goes wrong before the extract callback even fires
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    console.error("Global Upload Error:", globalErr);
+    res.status(500).json({ error: "Internal server error during upload" });
+  }
 });
 
 /* ---------- ANALYZE ---------- */
