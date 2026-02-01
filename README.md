@@ -48,18 +48,18 @@ Deployment: Vercel for frontend, Render for backend
 
 ClearClause is divided into two main directories: frontend and backend. You will need to run both simultaneously for the application to function.
 
-1. Prerequisites
+1. Prerequisites:
 Node.js (v18+ recommended)
 npm or yarn
 A Supabase account and a Google Gemini API key.
 
-2. Installation & Setup
+2. Installation & Setup:
 First, clone the repository:
 
 git clone https://github.com/Houria-hs/CWThackathon-teamOdin.git
 cd CWThackathon-teamOdin
 
-🛠️ Backend Setup
+🛠️ Backend Setup:
 Navigate to the backend folder:
 cd backend
 
@@ -75,7 +75,7 @@ JWT_SECRET=your_custom_jwt_secret
 Start the backend server:
 npm start
 
-💻 Frontend Setup
+💻 Frontend Setup:
 Open a new terminal window and navigate to the frontend folder:
 cd frontend
 
@@ -88,7 +88,7 @@ VITE_API_URL=https://clearclause-975k.onrender.com
 Start the frontend development server:
 npm run dev
 
-5. Testing
+5. Testing:
 UI Testing: Check the "Laptop View" vs "Mobile View" by resizing your browser.
 
 Upload Test: Use a sample PDF to test the scanning animation and risk categorization.
