@@ -60,9 +60,9 @@ A Supabase account and a Google Gemini API key.
    
 First, clone the repository:
 
-git clone https://github.com/Houria-hs/CWThackathon-teamOdin.git
+git clone https://github.com/Houria-hs/ClearClause--CWThackathon-teamOdin.git
 
-cd CWThackathon-teamOdin
+cd ClearClause--CWThackathon-teamOdin
 
 
 🛠️ Backend Setup
